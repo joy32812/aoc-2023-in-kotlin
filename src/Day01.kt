@@ -18,8 +18,10 @@ fun main() {
             "nine" to 9,
         )
 
-        fun String.firstDigit(): Int {
-            for (i in this.indices) {
+        fun String.firstDigit(reversed: Boolean = false): Int {
+            val indices = if (reversed) this.indices.reversed() else this.indices
+
+            for (i in indices) {
                 if (this[i].isDigit()) return "${this[i]}".toInt()
 
                 for ((k, v) in str2Int) {
@@ -29,18 +31,7 @@ fun main() {
             return 0
         }
 
-        fun String.lastDigit(): Int {
-            for (i in this.indices.reversed()) {
-                if (this[i].isDigit()) return "${this[i]}".toInt()
-
-                for ((k, v) in str2Int) {
-                    if (this.startsWith(k, i)) return v
-                }
-            }
-            return 0
-        }
-
-        return input.sumOf { it.firstDigit() * 10 + it.lastDigit() }
+        return input.sumOf { it.firstDigit() * 10 + it.firstDigit(true) }
     }
 
     // test if implementation meets criteria from the description, like:
