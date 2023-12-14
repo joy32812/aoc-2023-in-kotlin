@@ -123,7 +123,7 @@ fun main() {
     }
 
     val times = 1000000000
-    val id = cntMap[(times - pre - 1) % cycle + pre + 1]!!
+    val id = cntMap[(times - pre) % cycle + pre]!!
 
     return id.split(",").map { grid.size - it.split("_")[0].toInt() }.sum()
   }
