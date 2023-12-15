@@ -1,11 +1,7 @@
 fun main() {
 
   fun String.toHashInt(): Int {
-    var ans = 0
-    for (c in this) {
-      ans = (ans + c.code) * 17 % 256
-    }
-    return ans
+    return this.fold(0) { acc, c ->  (acc + c.code) * 17 % 256}
   }
 
   fun part1(input: List<String>): Int {
