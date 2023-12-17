@@ -1,12 +1,5 @@
 import java.util.LinkedList
 
-//enum class Direction {
-//  TO_UP,
-//  TO_DOWN,
-//  TO_LEFT,
-//  TO_RIGHT
-//}
-//
 fun main() {
 
   // Direction
