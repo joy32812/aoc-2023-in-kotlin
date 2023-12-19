@@ -71,122 +71,69 @@ fun main() {
   }
 
 
-
-  data class RangeRating(
-    val x: IntRange,
-    val m: IntRange,
-    val a: IntRange,
-    val s: IntRange,
+  val char2Index = mutableMapOf(
+    'x' to 0,
+    'm' to 1,
+    'a' to 2,
+    's' to 3,
   )
-
-  fun List<Workflow>.toAllRangeRatings(): List<RangeRating> {
-    val (xRanges, mRanges, aRanges, sRanges) =  "xmas".map { ch ->
-      val points = this.flatMap { w ->
-        w.rules.mapNotNull { rule ->
-          if (rule.length < 2 || rule[1] !in "<>" || rule[0] != ch) null
-          else rule.substring(2).split(":")[0].toInt()
-        }
-      }
-        .toMutableList()
-        .apply {
-          add(1)
-          add(4000)
-        }
-        .toSet()
-        .sorted()
-
-      points
-        .zipWithNext()
-        .flatMap {
-          val list = mutableListOf(it.first .. it.first)
-          if (it.first + 1 <= it.second - 1) {
-            list += it.first + 1..<it.second
-          }
-          list
-        }
-        .toMutableList()
-        .apply { add(points.last() .. points.last()) }
-    }
-
-    val result = mutableListOf<RangeRating>()
-
-    for (x in xRanges) {
-      for (m in mRanges) {
-        for (a in aRanges) {
-          for (s in sRanges) {
-            result += RangeRating(x, m, a, s)
-          }
-        }
-      }
-    }
-    return result
-  }
-
-  fun RangeRating.toResultForRule(rule: String): String? {
-    if (rule.length < 2) return rule
-    if (rule[1] !in "<>") return rule
-
-    val ch = rule[0]
-    val v = rule.substring(2).split(":")[0].toInt()
-    val result = rule.substring(2).split(":")[1]
-
-    val range = when (ch) {
-      'x' -> x
-      'm' -> m
-      'a' -> a
-      else -> s
-    }
-
-    if (rule[1] == '<' && range.last < v) return result
-    if (rule[1] == '>' && range.first > v) return result
-
-    return null
-  }
-
-  fun RangeRating.canBeAccepted(workflowMap: Map<String, Workflow>): Boolean {
-    var now = "in"
-    while (true) {
-      val workflow = workflowMap[now]!!
-
-      for (rule in workflow.rules) {
-
-        val result = this.toResultForRule(rule)
-        if (result != null) {
-          now = result
-          break
-        }
-      }
-
-      if (now == "A") return true
-      if (now == "R") return false
-    }
-  }
-
   fun part2(input: List<String>): Long {
     val workflows = input.toWorkflows()
     val workflowMap = workflows.associateBy { it.id }
 
-    val rangeRatings = workflows.toAllRangeRatings()
+    var ans = 0L
 
-    fun IntRange.len(): Long {
-      return this.last - this.first + 1L
-    }
-    fun IntRange.sum(): Long {
-      return 1L * (first + last) * len() / 2
+    fun dfs(now: String, ranges: List<IntRange>) {
+      if (now == "R") return
+      if (now == "A") {
+        ans += ranges.fold(1L) { acc, range -> acc * (range.last - range.first + 1) }
+        return
+      }
+
+      val workflow = workflowMap[now]!!
+      val curRange = ranges.toMutableList()
+
+      for (rule in workflow.rules) {
+        if (rule.length < 2 || rule[1] !in "<>") {
+          dfs(rule, curRange)
+          break
+        }
+
+        val ch = rule[0]
+        val v = rule.substring(2).split(":")[0].toInt()
+        val result = rule.substring(2).split(":")[1]
+
+        val index = char2Index[ch]!!
+
+        if (rule[1] == '<') {
+          if (curRange[index].first < v) {
+            val newRange = curRange.toMutableList()
+            newRange[index] = curRange[index].first..(v - 1)
+            dfs(result, newRange)
+
+            curRange[index] = v..curRange[index].last
+          }
+        } else {
+          if (curRange[index].last > v) {
+            val newRange = curRange.toMutableList()
+            newRange[index] = (v + 1)..curRange[index].last
+            dfs(result, newRange)
+
+            curRange[index] = curRange[index].first..v
+          }
+        }
+      }
     }
 
-    val filter = rangeRatings.filter { it.canBeAccepted(workflowMap) }
-    val ans = filter.sumOf { r ->
-      r.x.len() * r.m.len() * r.a.len() * r.s.len()
-    }
+    dfs("in", Array(4) { 1..4000 }.toList())
     return ans
   }
 
   val testInput = readInput("Day19_test")
   check(part1(testInput) == 19114)
-  // check(part2(testInput) == 167409079868000)
+  check(part2(testInput) == 167409079868000L)
 
   val input = readInput("Day19")
-  // part1(input).println()
+  part1(input).println()
   part2(input).println()
 }
