@@ -2,6 +2,10 @@ import java.util.LinkedList
 
 fun main() {
 
+  val rxPrevIds = listOf("nx", "sp", "cc", "jq")
+  val rxPrevMap = rxPrevIds.associateWith { 0 }.toMutableMap()
+  var count = 0
+
   data class Module(
     val id: String,
     val dests: List<String>,
@@ -40,6 +44,7 @@ fun main() {
   )
 
   fun Pulse.isLow() = type == 0
+  fun Pulse.isHigh() = type == 1
 
   fun List<Module>.toInitState(): State {
     val flipState = mutableMapOf<String, Int>()
@@ -52,10 +57,6 @@ fun main() {
     }
     return State(flipState, conjState)
   }
-
-  var idGotType = false
-  val needId = "jq"
-  val needPulseType = 1
 
   fun List<Module>.run(initState: State): Pair<LongArray, State> {
     val result = LongArray(2).apply { this[0] = 1 }
@@ -96,10 +97,13 @@ fun main() {
 
       if (shouldPass) {
         for (dest in module.dests) {
-          if (dest == needId && nextPulseType == needPulseType) idGotType = true
-
           result[nextPulseType]++
-          Q.add(Pulse(dest, nextPulseType, module.id))
+          val nextPulse = Pulse(dest, nextPulseType, module.id)
+          Q.add(nextPulse)
+
+          if (nextPulse.isHigh() && nextPulse.id == "dd") {
+            rxPrevMap[nextPulse.from] = count
+          }
         }
       }
 
@@ -124,31 +128,37 @@ fun main() {
     return ans[0] * ans[1]
   }
 
-  fun part2(input: List<String>): Int {
-    idGotType = false
+  // gcd recursive
+  fun getGcd(a: Long, b: Long): Long {
+    return if (b == 0L) a else getGcd(b, a % b)
+  }
+  fun getLcm(a: Long, b: Long): Long {
+    return a * b / getGcd(a, b)
+  }
 
-    var cnt = 0
+  fun part2(input: List<String>): Long {
     val modules = input.toModules()
     var curState = modules.toInitState()
 
-    while (true) {
-      curState = modules.run(curState).second
-      cnt ++
+    count = 0
+    while (!rxPrevMap.values.all { it > 0 }) {
+      count ++
 
-      if (idGotType) break
+      val (_, nextState) = modules.run(curState)
+      curState = nextState
     }
 
-    return cnt
+    return rxPrevMap.values.fold(1L) { acc, i -> getLcm(acc, i.toLong()) }
   }
 
 
-//  val testInput = readInput("Day20_test")
-//  check(part1(testInput) == 32000000L)
-//
-//  val testInput1 = readInput("Day20_test1")
-//  check(part1(testInput1) == 11687500L)
-//
+  val testInput = readInput("Day20_test")
+  check(part1(testInput) == 32000000L)
+
+  val testInput1 = readInput("Day20_test1")
+  check(part1(testInput1) == 11687500L)
+
   val input = readInput("Day20")
-//  part1(input).println()
+  part1(input).println()
   part2(input).println()
 }
